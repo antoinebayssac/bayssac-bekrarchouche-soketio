@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bataille Navale</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f8ff;
+        }
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+        h2 {
+            color: #444;
+            text-align: center;
+        }
+        .instructions {
+            margin-bottom: 20px;
+            font-size: 16px;
+            text-align: center;
+            max-width: 600px;
+        }
+        .board-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            margin-top: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 10px;
+        }
+        td {
+            width: 30px;
+            height: 30px;
+            border: 1px solid black;
+            text-align: center;
+        }
+        .ship {
+            background-color: gray;
+        }
+        .hit {
+            background-color: red;
+        }
+        .miss {
+            background-color: blue;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bataille Navale</h1>
+    <div class="instructions">
+        Instructions : <br>
+        1. Cliquez sur les cases de votre grille pour placer vos navires (gris). Vous devez placer 5 navires. <br>
+        2. Une fois que tous vos navires sont placés, cliquez sur le bouton 'Prêt'. <br>
+        3. Attendez que l'adversaire soit prêt. <br>
+        4. Lorsque la partie commence, cliquez sur les cases de la grille de l'adversaire pour attaquer (rouge pour touché, bleu pour manqué). <br>
+        5. Le jeu continue jusqu'à ce qu'un joueur ait coulé tous les navires de l'adversaire.
+    </div>
+    <div class="board-container">
+        <div>
+            <h2>Votre Grille</h2>
+            <table id="yourBoard"></table>
+            <div class="button-container">
+                <button id="readyButton" onclick="pret()">Prêt</button>
+            </div>
+        </div>
+        <div>
+            <h2>Grille de l'Adversaire</h2>
+            <table id="opponentBoard"></table>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        let yourBoard = [];
+        let opponentBoard = [];
+        let naviresAPlacer = 5;
+
+        function createBoard(tableId, board, isClickable) {
+            const table = document.getElementById(tableId);
+            table.innerHTML = '';  // Clear existing content
+            for (let i = 0; i < 10; i++) {
+                const row = document.createElement('tr');
+                board[i] = [];
+                for (let j = 0; j < 10; j++) {
+                    const cell = document.createElement('td');
+                    cell.dataset.x = i;
+                    cell.dataset.y = j;
+                    board[i][j] = 0;
+                    if (isClickable) {
+                        cell.addEventListener('click', onCellClick);
+                    }
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            }
+        }
+
+        function onCellClick(event) {
+            const x = event.target.dataset.x;
+            const y = event.target.dataset.y;
+            if (naviresAPlacer > 0 && yourBoard[x][y] === 0) {
+                yourBoard[x][y] = 1;
+                event.target.classList.add('ship');
+                naviresAPlacer--;
+                console.log(`Navire placé en (${x}, ${y})`);
+            } else if (naviresAPlacer === 0 && event.target.parentNode.parentNode.id === 'opponentBoard') {
+                socket.emit('makeMove', x, y);
+                console.log(`Attaque en (${x}, ${y})`);
+            }
+        }
+
+        function pret() {
+            if (naviresAPlacer === 0) {
+                socket.emit('placeShips', yourBoard);
+                document.getElementById('readyButton').disabled = true;
+                console.log('Tous les navires sont placés, prêt pour la bataille !');
+            } else {
+                alert(`Vous devez placer encore ${naviresAPlacer} navires.`);
+            }
+        }
+
+        socket.on('connect', () => {
+            console.log('Connecté au serveur');
+            socket.emit('joinGame');
+        });
+
+        socket.on('gameStart', ({ opponentId }) => {
+            console.log('La partie a commencé contre', opponentId);
+            createBoard('yourBoard', yourBoard, true);
+            createBoard('opponentBoard', opponentBoard, true);
+        });
+
+        socket.on('bothReady', () => {
+            console.log('Les deux joueurs sont prêts');
+        });
+
+        socket.on('moveResult', ({ x, y, hit }) => {
+            console.log(`Résultat de l'attaque en (${x}, ${y}) : ${hit ? 'touché' : 'manqué'}`);
+            const cell = document.querySelector(`#opponentBoard td[data-x="${x}"][data-y="${y}"]`);
+            cell.classList.add(hit ? 'hit' : 'miss');
+        });
+
+        socket.on('opponentMove', ({ x, y, hit }) => {
+            console.log(`Attaque de l'adversaire en (${x}, ${y}) : ${hit ? 'touché' : 'manqué'}`);
+            const cell = document.querySelector(`#yourBoard td[data-x="${x}"][data-y="${y}"]`);
+            cell.classList.add(hit ? 'hit' : 'miss');
+        });
+
+        socket.on('gameOver', (result) => {
+            console.log('Partie terminée ! Vous avez ' + result);
+            alert('Partie terminée ! Vous avez ' + result);
+        });
+
+        socket.on('opponentDisconnected', () => {
+            console.log('L\'adversaire s\'est déconnecté');
+            alert('L\'adversaire s\'est déconnecté');
+        });
+    </script>
+</body>
+</html>

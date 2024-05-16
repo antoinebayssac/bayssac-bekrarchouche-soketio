@@ -1,0 +1,78 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f0f8ff;
+}
+
+h1 {
+    color: #333;
+    margin-top: 20px;
+}
+
+h2 {
+    color: #444;
+}
+
+.board-container {
+    display: flex;
+    justify-content: space-between;
+    width: 80%;
+    margin: 20px 0;
+}
+
+table {
+    border-collapse: collapse;
+    margin: 10px;
+}
+
+td {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #000;
+    text-align: center;
+    cursor: pointer;
+}
+
+.your-board td {
+    background-color: #d0e7f9;
+}
+
+.opponent-board td {
+    background-color: #a3d8f4;
+}
+
+.ship {
+    background-color: #4caf50;  /* Vert pour les navires */
+}
+
+.hit {
+    background-color: #f44336;  /* Rouge pour les coups touchés */
+}
+
+.miss {
+    background-color: #f0f8ff;  /* Blanc pour les coups manqués */
+}
+
+.container {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.instructions {
+    margin-bottom: 20px;
+    font-size: 16px;
+    text-align: center;
+}
+
+.button-container {
+    margin: 20px;
+    text-align: center;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
